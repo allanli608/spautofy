@@ -24,15 +24,20 @@
         <p>No playlists created.</p>
     {% endif %}
 
-    <h1>Uncategorizable Songs</h1>
+    <h1>Uncategorized Songs</h1>
     {% if uncategorizable_songs %}
         <ul>
-            {% for song in uncategorizable_songs %}
-                <li>{{ song.name }} by {{ song.artists[0].name }}</li>
-            {% endfor %}
+            <li>
+                <strong>Uncategorized Songs</strong> - {{ uncategorizable_songs|length }} tracks
+                <ul>
+                    {% for song_name in uncategorizable_songs %}
+                    <li>{{ song_name }}</li>
+                    {% endfor %}
+                </ul>
+            </li>
         </ul>
     {% else %}
-        <p>No uncategorizable songs.</p>
+        <p>No uncategorized songs.</p>
     {% endif %}
 </body>
 </html>

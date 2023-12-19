@@ -46,7 +46,7 @@ def create_spotify_client():
         return None
 
 # Generalized genres list
-generalized_genres = ["pop", "rap", "classical", "lofi", "breakcore", "indie"]
+generalized_genres = ["pop", "rap", "classical", "lo-fi", "breakcore", "indie"]
 
 def majority_vote(matches):
     # Count the occurrences of each match
@@ -63,6 +63,12 @@ def majority_vote(matches):
         # Return the most common match
         return [most_common_matches[0][0]]
 
+def add_songs_to_playlist(sp, playlist_id, track_uris):
+    chunk_size = 100
+    for i in range(0, len(track_uris), chunk_size):
+        chunk = track_uris[i:i + chunk_size]
+        sp.playlist_add_items(playlist_id, chunk)
+        
 # Home route
 @app.route("/")
 def index():
@@ -162,7 +168,8 @@ def generalize():
 
         if not subgenres:
             # If subgenres is empty, output "Other"
-            generalized_genre_data.append(["Other"])
+            generalized_genre_data.append(["Uncategorizable"])
+            continue
 
         for subgenre in subgenres:
             # Check if any generalized genre is a substring of the subgenre
@@ -179,7 +186,7 @@ def generalize():
                 messages=[
                     {
                         "role": "system",
-                        "content": "Output one of: rap, pop, lofi, breakcore, classical, indie. The output should best describe the inputted list of subgenres. Nothing else should be outputted."
+                        "content": "Output one of: rap, pop, lo-fi, breakcore, classical, indie. The output should best describe the inputted list of subgenres. Nothing else should be outputted."
                     },
                     {
                         "role": "user",
@@ -195,6 +202,7 @@ def generalize():
             # Extract the generated genre from the OpenAI response
             generated_genre = response.choices[0].message.content
             print(f"Generated genre: {generated_genre}")
+            
             # Append the generated genre to the result
             generalized_genre_data.append([generated_genre])
 
@@ -209,7 +217,7 @@ def make_playlists():
     generalized_genre_data = session.get("generalized_genre_data", [])
     track_data = session.get("track_data", [])
     # Define generalized genres
-    generalized_genres = ["pop", "rap", "classical", "lofi", "breakcore", "indie"]
+    generalized_genres = ["pop", "rap", "classical", "lo-fi", "breakcore", "indie"]
 
     # Initialize dictionaries to store song IDs for each genre
     playlist_songs = {genre: [] for genre in generalized_genres}
@@ -220,8 +228,8 @@ def make_playlists():
 
     # Iterate through the generalized genres and populate the playlist_songs
     for i, genres in enumerate(generalized_genre_data):
-        if not genres:
-            uncategorizable_songs.append(track_data[i].get("id") if i < len(track_data) else [])  # Add the song to uncategorizable list
+        if (len(genres) == 1) and genres[0].lower() not in [g.lower() for g in generalized_genres]:
+            uncategorizable_songs.append(track_data[i].get("id"))  # Add the song to uncategorizable list
         else:
             for genre in genres:
                 # Check if the genre is in the generalized genres list
@@ -230,7 +238,7 @@ def make_playlists():
                     if i < len(track_data):
                         playlist_songs[genre].append(track_data[i].get("id")) # Add the song to the corresponding genre list
 
-    # Remove duplicates from each playlist
+ # Remove duplicates from each playlist
     for genre, songs in playlist_songs.items():
         playlist_songs[genre] = list(set(songs))
 
@@ -238,14 +246,29 @@ def make_playlists():
     playlists_with_genres = [(genre, []) for genre in generalized_genres]
     uncategorizable_songs_names = []
 
+    # Create the uncategorizable playlist
+    uncategorizable_playlist = None
+    try:
+        uncategorizable_playlist = sp.user_playlist_create(sp.me()['id'], name="Uncategorizable")
+    except spotipy.SpotifyException as e:
+        print(f"Error creating uncategorizable playlist: {e}")
+
+    # Add songs to the uncategorizable playlist in chunks
+    if uncategorizable_playlist:
+        uncategorizable_track_uris = [f"spotify:track:{song}" for song in uncategorizable_songs]
+        add_songs_to_playlist(sp, uncategorizable_playlist['id'], uncategorizable_track_uris)
+
+        # Populate uncategorizable_songs_names with the song names
+        uncategorizable_songs_names.extend([track['track']['name'] for track in sp.playlist_tracks(uncategorizable_playlist['id'])['items']])
+
     for genre, songs in playlist_songs.items():
         if songs:
             try:
                 # Create a new playlist
                 playlist = sp.user_playlist_create(sp.me()['id'], name=f"({genre})")
-                # Add songs to the playlist
-                track_uris = [f"spotify:track:{song}" for song in songs]
-                sp.playlist_add_items(playlist['id'], track_uris)
+
+                # Add songs to the playlist in chunks
+                add_songs_to_playlist(sp, playlist['id'], [f"spotify:track:{song}" for song in songs])
 
                 # Retrieve the full playlist object
                 full_playlist = sp.playlist(playlist['id'])
@@ -253,6 +276,7 @@ def make_playlists():
             except spotipy.SpotifyException as e:
                 print(f"Error creating playlist for {genre}: {e}")
 
+    print(uncategorizable_songs_names)
     # Render the make_playlists template with the playlists and uncategorizable songs
     return render_template("make_playlists.html", playlists=playlists_with_genres, uncategorizable_songs=uncategorizable_songs_names, genrelist=generalized_genres)
 
