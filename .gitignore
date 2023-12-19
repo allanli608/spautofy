@@ -3,4 +3,3 @@ env/
 config.py
 __pycache__/
 flask_session/
-__pycache__/config.cpython-311.pyc
