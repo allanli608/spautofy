@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Make Playlists</title>
+</head>
+<body>
+    <h1>Playlists Created</h1>
+    {% if playlists %}
+        <ul>
+            {% for genre, playlist in playlists %}
+                <li>
+                    <strong>{{ genre }}</strong> - {{ playlist|length }} tracks
+                    <ul>
+                        {% for song_name in playlist %}
+                            <li>{{ song_name }}</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No playlists created.</p>
+    {% endif %}
+
+    <h1>Uncategorizable Songs</h1>
+    {% if uncategorizable_songs %}
+        <ul>
+            {% for song in uncategorizable_songs %}
+                <li>{{ song.name }} by {{ song.artists[0].name }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No uncategorizable songs.</p>
+    {% endif %}
+</body>
+</html>
