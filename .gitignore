@@ -1,3 +1,5 @@
 venv/
 env/
 config.py
+_pycache_/
+flask_session/
