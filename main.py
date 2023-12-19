@@ -7,21 +7,22 @@ from openai import OpenAI
 from collections import Counter
 import requests
 from spotipy.exceptions import SpotifyException
+from config import OPEN_AI_API_KEY, SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, FLASK_SECRET_KEY
 
 app = Flask(__name__)
-app.secret_key = "sdsdsdsdhipshfiasph"  # Change this to a random secret key
+app.secret_key = FLASK_SECRET_KEY  # Change this to a random secret key
 
 # Configure Flask-Session with server-side storage (filesystem in this example)
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # Spotify API credentials
-SPOTIPY_CLIENT_ID = "6692ee51d1fe43f1837fcd26ee450018"
-SPOTIPY_CLIENT_SECRET = "a89e6d1320784f5f8332b5fd20ab4997"
+SPOTIPY_CLIENT_ID = SPOTIFY_CLIENT_ID
+SPOTIPY_CLIENT_SECRET = SPOTIFY_CLIENT_SECRET
 SPOTIPY_REDIRECT_URI = "http://localhost:5000/callback"  # Update with your redirect URI
 
 # OpenAI API key
-OPENAI_API_KEY = "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"  # Replace with your OpenAI API key
+OPENAI_API_KEY = OPEN_AI_API_KEY # Replace with your OpenAI API key
 
 # Set up OpenAI API
 client = OpenAI(api_key=OPENAI_API_KEY)
