@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generalize Genres</title>
+</head>
+<body>
+    <h1>Generalize Genres</h1>
+    {% if generalized_data %}
+        <ul>
+            {% for genre in generalized_data %}
+                <li>{{ genre }}</li>
+            {% endfor %}
+        </ul>
+        <form action="{{ url_for('make_playlists') }}" method="get">
+            <button type="submit">Make Playlists</button>
+        </form>
+    {% else %}
+        <p>No generalized genres found.</p>
+    {% endif %}
+</body>
+</html>
