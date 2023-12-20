@@ -88,6 +88,10 @@ def login():
 def callback():
     token_info = sp_oauth.get_access_token(request.args["code"])
     session["token_info"] = token_info
+
+    session.pop("genre_data", None)
+    session.pop("track_data", None)
+    session.pop("generalized_genre_data", None)
     return redirect(url_for("index"))
 
 # /logout route
@@ -101,6 +105,9 @@ def logout():
 def stats():
     if not session.get("token_info"):
         return redirect(url_for("login"))
+    
+    session.pop("genre_data", None)
+    session.pop("track_data", None)
 
     # Use create_spotify_client function to get the authenticated Spotify client
     sp = create_spotify_client()
