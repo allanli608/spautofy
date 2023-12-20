@@ -102,13 +102,16 @@ def login():
 # /callback route
 @app.route("/callback")
 def callback():
-    print("entering callback") # debug
+    print("entering callback")  # debug
     token_info = sp_oauth.get_access_token(request.args["code"])
     print(session)
     session["token_info"] = token_info
     session.pop("genre_data", None)
     session.pop("track_data", None)
-    session.pop("generalized_genre_data", None)
+    
+    # Mark the session as modified
+    session.modified = True
+    
     return render_template("authenticated.html")
 
 # /logout route
