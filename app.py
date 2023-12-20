@@ -20,7 +20,7 @@ Session(app)
 # Spotify API credentials
 SPOTIPY_CLIENT_ID = os.environ.get('SPOTIFY_CLIENT_ID')
 SPOTIPY_CLIENT_SECRET = os.environ.get('SPOTIFY_CLIENT_SECRET')
-SPOTIPY_REDIRECT_URI = "https://sleepy-basin-39672-ce4d1ea25954.herokuapp.com/callback"  # Update with your redirect URI
+SPOTIPY_REDIRECT_URI = "http://127.0.0.1:5000/callback"  # Update with your redirect URI
 
 # OpenAI API key
 OPENAI_API_KEY = os.environ.get('OPEN_AI_API_KEY') # Replace with your OpenAI API key
@@ -73,6 +73,7 @@ def add_songs_to_playlist(sp, playlist_id, track_uris):
 # Home route
 @app.route("/")
 def index():
+    session.clear()
     if not session.get("token_info"):
         return render_template("index.html")
     return render_template("authenticated.html")
@@ -88,8 +89,6 @@ def login():
 def callback():
     token_info = sp_oauth.get_access_token(request.args["code"])
     session["token_info"] = token_info
-    
-    sp_oauth.clear_token_cache()
     session.pop("genre_data", None)
     session.pop("track_data", None)
     session.pop("generalized_genre_data", None)
