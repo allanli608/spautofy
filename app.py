@@ -73,6 +73,7 @@ def add_songs_to_playlist(sp, playlist_id, track_uris):
 # Home route
 @app.route("/")
 def index():
+    sp_oauth.clear_token_cache()
     if not session.get("token_info"):
         return render_template("index.html")
     return render_template("authenticated.html")
