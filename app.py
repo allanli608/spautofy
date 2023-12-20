@@ -19,7 +19,7 @@ Session(app)
 # Spotify API credentials
 SPOTIPY_CLIENT_ID = os.environ.get('SPOTIFY_CLIENT_ID')
 SPOTIPY_CLIENT_SECRET = os.environ.get('SPOTIFY_CLIENT_SECRET')
-SPOTIPY_REDIRECT_URI = "http://127.0.0.1:5000/callback"  # Update with your redirect URI
+SPOTIPY_REDIRECT_URI = "https://sleepy-basin-39672-ce4d1ea25954.herokuapp.com/callback"  # Update with your redirect URI
 
 # OpenAI API key
 OPENAI_API_KEY = os.environ.get('OPEN_AI_API_KEY') # Replace with your OpenAI API key
