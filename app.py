@@ -35,6 +35,7 @@ sp_oauth = SpotifyOAuth(
     SPOTIPY_REDIRECT_URI,
     scope="user-library-read playlist-modify-public playlist-modify-private user-read-private",
     cache_path=".spotipyoauthcache",
+    show_dialogue=True
 )
 
 def create_spotify_client():
@@ -95,6 +96,7 @@ def callback():
 @app.route("/logout")
 def logout():
     session.clear()
+    session.abandon()
     return redirect(url_for("index"))
 
 # /stats route
