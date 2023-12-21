@@ -6,8 +6,9 @@ from spotipy.oauth2 import SpotifyOAuth
 from openai import OpenAI
 from collections import Counter
 import requests
-import os
-import uuid
+from spotipy.exceptions import SpotifyException
+#from config import OPEN_AI_API_KEY, SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, FLASK_SECRET_KEY
+import os 
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY')  # Change this to a random secret key
@@ -27,10 +28,6 @@ OPENAI_API_KEY = os.environ.get('OPEN_AI_API_KEY') # Replace with your OpenAI AP
 # Set up OpenAI API
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-# Generate a random user ID
-def generate_user_id():
-    return str(uuid.uuid4())
-
 # Spotify OAuth configuration
 sp_oauth = SpotifyOAuth(
     SPOTIPY_CLIENT_ID,
@@ -41,13 +38,8 @@ sp_oauth = SpotifyOAuth(
 )
 
 def create_spotify_client():
-    token_info = sp_oauth.get_access_token()
-    if token_info:
-        spotify_token = token_info['access_token']
-        return Spotify(auth=spotify_token, requests_timeout=10, retries=10)
-    else:
-        # Handle case when no access token is available
-        return None
+        return Spotify(auth=session['access_token'], requests_timeout=10, retries=10)
+
 
 # Generalized genres list
 generalized_genres = ["pop", "rap", "classical", "lo-fi", "breakcore", "indie"]
@@ -72,64 +64,41 @@ def add_songs_to_playlist(sp, playlist_id, track_uris):
     for i in range(0, len(track_uris), chunk_size):
         chunk = track_uris[i:i + chunk_size]
         sp.playlist_add_items(playlist_id, chunk)
-
-# Home route      
+        
+# Home route
 @app.route("/")
 def index():
-    print("entering index")
-    print(session) # debug
-    session.clear()
-    print(session) # debug
-    # Generate a user ID if it doesn't exist in the session
-    if not session.get("user_id"):
-        session["user_id"] = generate_user_id()
-
-    user_id = session["user_id"]
-    session_key_prefix = f"user_{user_id}_"
-
-    if not session.get(session_key_prefix + "token_info"):
+    session.permanent = False
+    if not session.get("token_info"):
         return render_template("index.html")
-    
     return render_template("authenticated.html")
 
 # /login route
 @app.route("/login")
 def login():
-    print("entering login") # debug
     auth_url = sp_oauth.get_authorize_url()
     return redirect(auth_url)
 
 # /callback route
 @app.route("/callback")
 def callback():
-    print("entering callback")  # debug
     token_info = sp_oauth.get_access_token(request.args["code"])
-    print(session)
     session["token_info"] = token_info
-    session.pop("genre_data", None)
-    session.pop("track_data", None)
-    
-    # Mark the session as modified
-    session.modified = True
-    
-    return render_template("authenticated.html")
+    spotify_token = token_info['access_token']
+    session['access_token'] = spotify_token
+    return redirect(url_for("index"))
 
 # /logout route
 @app.route("/logout")
 def logout():
-    print("logging out") # debug
     session.clear()
     return redirect(url_for("index"))
 
 # /stats route
 @app.route("/stats")
 def stats():
-    print("stats!") # debug
     if not session.get("token_info"):
         return redirect(url_for("login"))
-    
-    session.pop("genre_data", None)
-    session.pop("track_data", None)
 
     # Use create_spotify_client function to get the authenticated Spotify client
     sp = create_spotify_client()
