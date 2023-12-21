@@ -71,6 +71,8 @@ def index():
     session.permanent = False
     if not session.get("token_info"):
         return render_template("index.html")
+    print("token info: " + session['token_info'])
+    print("access token info: " + session['access_token'])
     return render_template("authenticated.html")
 
 # /login route
@@ -83,6 +85,7 @@ def login():
 @app.route("/callback")
 def callback():
     token_info = sp_oauth.get_access_token(request.args["code"])
+    print(request.args['code'])
     session["token_info"] = token_info
     spotify_token = token_info['access_token']
     session['access_token'] = spotify_token
