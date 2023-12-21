@@ -71,8 +71,8 @@ def index():
     session.permanent = False
     if not session.get("token_info"):
         return render_template("index.html")
-    print("token info: " + session['token_info'])
-    print("access token info: " + session['access_token'])
+    print("token info: " + str(session['token_info']))
+    print("access token info: " + str(session['access_token']))
     return render_template("authenticated.html")
 
 # /login route
