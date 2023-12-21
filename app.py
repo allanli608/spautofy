@@ -276,6 +276,7 @@ def make_playlists():
                 print(f"Error creating playlist for {genre}: {e}")
 
     print(uncategorizable_songs_names)
+    session.abandon()
     # Render the make_playlists template with the playlists and uncategorizable songs
     return render_template("make_playlists.html", playlists=playlists_with_genres, uncategorizable_songs=uncategorizable_songs_names, genrelist=generalized_genres)
 
