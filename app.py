@@ -85,8 +85,9 @@ def login():
 # /callback route
 @app.route("/callback")
 def callback():
+    print("code: " + str(request.args['code']))
     token_info = sp_oauth.get_access_token(request.args["code"])
-    print(request.args['code'])
+    print("spoauthtokeninfo: " + str(token_info))
     session["token_info"] = token_info
     spotify_token = token_info['access_token']
     session['access_token'] = spotify_token
@@ -96,7 +97,6 @@ def callback():
 @app.route("/logout")
 def logout():
     session.clear()
-    session.abandon()
     return redirect(url_for("index"))
 
 # /stats route
@@ -281,7 +281,6 @@ def make_playlists():
                 print(f"Error creating playlist for {genre}: {e}")
 
     print(uncategorizable_songs_names)
-    session.abandon()
     # Render the make_playlists template with the playlists and uncategorizable songs
     return render_template("make_playlists.html", playlists=playlists_with_genres, uncategorizable_songs=uncategorizable_songs_names, genrelist=generalized_genres)
 
