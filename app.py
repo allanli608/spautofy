@@ -1,4 +1,4 @@
-from flask import Flask, redirect, request, session, url_for, render_template
+from flask import Flask, redirect, request, session, url_for, render_template, jsonify
 from flask_session import Session
 from spotipy import Spotify
 import spotipy
@@ -9,6 +9,7 @@ import requests
 from spotipy.exceptions import SpotifyException
 #from config import OPEN_AI_API_KEY, SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, FLASK_SECRET_KEY
 import os 
+from geopy.distance import geodesic
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY')  # Change this to a random secret key
@@ -20,10 +21,10 @@ Session(app)
 # Spotify API credentials
 SPOTIPY_CLIENT_ID = os.environ.get('SPOTIFY_CLIENT_ID')
 SPOTIPY_CLIENT_SECRET = os.environ.get('SPOTIFY_CLIENT_SECRET')
-SPOTIPY_REDIRECT_URI = "https://sleepy-basin-39672-ce4d1ea25954.herokuapp.com/callback"  # Update with your redirect URI
+SPOTIPY_REDIRECT_URI = "https://sleepy-basin-39672-ce4d1ea25954.herokuapp.com/callback" 
 
 # OpenAI API key
-OPENAI_API_KEY = os.environ.get('OPEN_AI_API_KEY') # Replace with your OpenAI API key
+OPENAI_API_KEY = os.environ.get('OPEN_AI_KEY') # Replace with your OpenAI API key
 
 # Set up OpenAI API
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -65,10 +66,20 @@ def add_songs_to_playlist(sp, playlist_id, track_uris):
     for i in range(0, len(track_uris), chunk_size):
         chunk = track_uris[i:i + chunk_size]
         sp.playlist_add_items(playlist_id, chunk)
-        
+
+def clear_cache(cache_path):
+    try:
+        os.remove(cache_path)
+        print(f"Cache at {cache_path} cleared successfully.")
+    except FileNotFoundError:
+        print(f"Cache file at {cache_path} not found.")
+    except Exception as e:
+        print(f"An error occurred while clearing the cache: {e}")
+
 # Home route
 @app.route("/")
 def index():
+    clear_cache(cache_path=".spotipyoauthcache")
     session.permanent = False
     if not session.get("token_info"):
         return render_template("index.html")
@@ -283,6 +294,40 @@ def make_playlists():
     print(uncategorizable_songs_names)
     # Render the make_playlists template with the playlists and uncategorizable songs
     return render_template("make_playlists.html", playlists=playlists_with_genres, uncategorizable_songs=uncategorizable_songs_names, genrelist=generalized_genres)
+
+@app.route('/data', methods=['POST'])
+def data():
+    # Assuming the JSON file contains 'latitude' and 'longitude'
+    json_data = request.get_json()
+    if 'latitude' not in json_data or 'longitude' not in json_data:
+        return jsonify({'error': 'Invalid JSON format'}), 400
+
+    # Get coordinates from JSON data
+    user_coordinates = (json_data['latitude'], json_data['longitude'])
+    
+    # Location: University of Waterloo PAC Gym
+    predetermined_coordinates = (43.47221643235234, -80.5460965713552)
+    # Calculate distance in meters
+    distance = geodesic(user_coordinates, predetermined_coordinates).meters
+
+    if distance < 50:
+        # Start playing the liked songs playlist (modify as needed)
+        access_token = session.get('access_token', None)
+        if access_token:
+            sp = spotipy.Spotify(auth=access_token)
+            current_user = sp.current_user()
+            user_id = current_user['id']
+            
+            # Get the URI of the 'Liked Songs' playlist
+            playlists = sp.current_user_playlists()
+            liked_songs_playlist = next(playlist for playlist in playlists['items'] if playlist['name'] == 'Liked Songs')
+            playlist_uri = liked_songs_playlist['uri']
+            
+            sp.start_playback(context_uri=playlist_uri)
+
+        return jsonify({'status': 'Playlist started'})
+
+    return jsonify({'status': 'Distance greater than 100 meters'})
 
 if __name__ == "__main__":
     app.run(debug=True)
